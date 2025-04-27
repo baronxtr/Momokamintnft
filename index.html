@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Momoka Mint NFT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-image: url('https://fcb2f4e08c25f8c7f8e218352d8f51d0.ipfs.4everland.link/ipfs/bafybeih3hubg7vczq6zl54vzsvjwkz5gdqxgv42ostf7bvzjtk6ttmhvzq');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #00ff88;
+      text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+      margin-bottom: 20px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    select, input[type="file"], input[type="text"] {
+      margin: 15px 0;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+    select:focus, input[type="file"]:focus, input[type="text"]:focus {
+      outline: none;
+      box-shadow: 0 0 10px #00ff88;
+    }
+    button {
+      margin: 15px 0;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(45deg, #00ff88, #00ccff);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 255, 136, 0.5);
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #00ff88;
+      text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    }
+    img#preview {
+      max-width: 100%;
+      margin-top: 15px;
+      border-radius: 8px;
+      display: none;
+      border: 2px solid #00ff88;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+      to { text-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+    }
+  </style>
+  <!-- Skrip Eksternal -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <script src="https://unpkg.com/ipfs-http-client@59.0.0/dist/index.min.js"></script>
+</head>
+<body>
+  <div class="overlay"></div>
+  <h1>Momoka Mint NFT</h1>
+  <div class="container">
+    <select id="network" onchange="switchNetwork()">
+      <option value="1">Ethereum</option>
+      <option value="8453">Base</option>
+      <option value="59144">Linea</option>
+      <option value="1868">Sonneium</option>
+      <option value="57073">Ink</option>
+      <option value="55244">Superposition</option>
+      <option value="232">Lens Chain Mainnet</option>
+    </select>
+    <input type="text" id="contractAddress" placeholder="Enter Contract Address">
+    <button id="connectWallet">Connect Wallet</button>
+    <input type="file" id="photo" accept="image/*">
+    <img id="preview" alt="Preview">
+    <button id="upload" disabled>Upload Photo</button>
+    <button id="mint" disabled>Mint NFT</button>
+    <div id="status">Status: Waiting for wallet connection...</div>
+  </div>
+
+  <script>
+    // Konfigurasi jaringan
+    const networkConfig = {
+      '1': { 
+        name: 'Ethereum', 
+        rpc: 'https://rpc.ankr.com/eth', 
+        chainId: '0x1', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://etherscan.io'
+      },
+      '8453': { 
+        name: 'Base', 
+        rpc: 'https://mainnet.base.org', 
+        chainId: '0x2135', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://basescan.org'
+      },
+      '59144': { 
+        name: 'Linea', 
+        rpc: 'https://rpc.linea.build', 
+        chainId: '0xe708', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://lineascan.build'
+      },
+      '1868': { 
+        name: 'Sonneium', 
+        rpc: 'https://rpc.soneium.org', 
+        chainId: '0x74c', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://explorer.soneium.org'
+      },
+      '57073': { 
+        name: 'Ink', 
+        rpc: 'https://rpc-gel.inkonchain.com', 
+        chainId: '0xded1', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://explorer.inkonchain.com'
+      },
+      '55244': { 
+        name: 'Superposition', 
+        rpc: 'https://rpc.superposition.so', 
+        chainId: '0xd7cc', 
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        blockExplorer: 'https://explorer.superposition.so'
+      },
+      '232': { 
+        name: 'Lens Chain Mainnet', 
+        rpc: 'https://rpc.lens.xyz', 
+        chainId: '0xe8', 
+        nativeCurrency: { name: 'GHO', symbol: 'GHO', decimals: 18 },
+        blockExplorer: 'https://explorer.lens.xyz'
+      }
+    };
+
+    // ABI kontrak (hanya fungsi claim untuk minting)
+    const contractABI = [
+      {
+        "inputs": [
+          { "internalType": "address", "name": "_to", "type": "address" },
+          { "internalType": "uint256", "name": "_quantity", "type": "uint256" },
+          { "internalType": "address", "name": "_currency", "type": "address" },
+          { "internalType": "uint256", "name": "_pricePerToken", "type": "uint256" },
+          { "internalType": "bytes32[]", "name": "_proofs", "type": "bytes32[]" },
+          { "internalType": "uint256", "name": "_maxQuantityPerTransaction", "type": "uint256" }
+        ],
+        "name": "claim",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ];
+
+    // Elemen DOM
+    const connectWalletBtn = document.getElementById('connectWallet');
+    const uploadBtn = document.getElementById('upload');
+    const mintBtn = document.getElementById('mint');
+    const photoInput = document.getElementById('photo');
+    const previewImg = document.getElementById('preview');
+    const statusDiv = document.getElementById('status');
+    const networkSelect = document.getElementById('network');
+    const contractAddressInput = document.getElementById('contractAddress');
+
+    let provider, signer, contract, ipfs, account;
+
+    // Inisialisasi IPFS dengan Infura Client ID
+    const infuraClientId = '0b0dd6c9e78cc0d60ce135cc62189213';
+    ipfs = window.IpfsHttpClient.create({
+      host: 'ipfs.infura.io',
+      port: 5001,
+      protocol: 'https',
+      headers: {
+        authorization: 'Basic ' + btoa(infuraClientId + ':') // Infura membutuhkan ID tanpa secret untuk IPFS
+      }
+    });
+
+    // Fungsi untuk menghubungkan dompet
+    async function connectWallet() {
+      if (!window.ethereum) {
+        statusDiv.textContent = 'Status: Please install MetaMask!';
+        return;
+      }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      try {
+        await provider.send('eth_requestAccounts', []);
+        signer = provider.getSigner();
+        account = await signer.getAddress();
+        connectWalletBtn.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+        connectWalletBtn.disabled = true;
+        uploadBtn.disabled = false;
+        statusDiv.textContent = 'Status: Wallet connected! Select a photo to upload.';
+        await switchNetwork();
+      } catch (error) {
+        statusDiv.textContent = `Status: Error connecting wallet: ${error.message}`;
+      }
+    }
+
+    // Fungsi untuk beralih jaringan
+    async function switchNetwork() {
+      const chainId = networkSelect.value;
+      const config = networkConfig[chainId];
+      if (!config) return;
+
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: config.chainId }]
+        });
+        statusDiv.textContent = `Status: Switched to ${config.name}.`;
+        if (account && contractAddressInput.value) {
+          initializeContract();
+        }
+      } catch (error) {
+        if (error.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: config.chainId,
+                chainName: config.name,
+                rpcUrls: [config.rpc],
+                nativeCurrency: config.nativeCurrency,
+                blockExplorerUrls: [config.blockExplorer]
+              }]
+            });
+            statusDiv.textContent = `Status: Added and switched to ${config.name}.`;
+            if (account && contractAddressInput.value) {
+              initializeContract();
+            }
+          } catch (addError) {
+            statusDiv.textContent = `Status: Error adding network: ${addError.message}`;
+          }
+        } else {
+          statusDiv.textContent = `Status: Error switching network: ${error.message}`;
+        }
+      }
+    }
+
+    // Inisialisasi kontrak
+    function initializeContract() {
+      const contractAddress = contractAddressInput.value;
+      if (!ethers.utils.isAddress(contractAddress)) {
+        statusDiv.textContent = 'Status: Invalid contract address!';
+        return;
+      }
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+      mintBtn.disabled = false;
+      statusDiv.textContent = 'Status: Contract initialized. Ready to mint.';
+    }
+
+    // Pratinjau gambar
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files[0];
+      if (file) {
+        previewImg.src = URL.createObjectURL(file);
+        previewImg.style.display = 'block';
+        uploadBtn.disabled = false;
+      }
+    });
+
+    // Fungsi untuk mengunggah foto ke IPFS
+    async function uploadPhoto() {
+      const file = photoInput.files[0];
+      if (!file) {
+        statusDiv.textContent = 'Status: Please select a photo!';
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      statusDiv.textContent = 'Status: Uploading to IPFS...';
+
+      try {
+        const result = await ipfs.add(file);
+        const imageCid = result.path;
+        const imageUrl = `https://ipfs.io/ipfs/${imageCid}`;
+
+        // Buat metadata JSON
+        const metadata = {
+          name: `Momoka NFT #${Date.now()}`,
+          description: 'A unique NFT created on Momoka Mint.',
+          image: imageUrl
+        };
+        const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
+        const metadataResult = await ipfs.add(metadataBlob);
+        const metadataCid = metadataResult.path;
+        const metadataUrl = `https://ipfs.io/ipfs/${metadataCid}`;
+
+        statusDiv.textContent = `Status: Photo uploaded to IPFS. Metadata URL: ${metadataUrl}`;
+        mintBtn.disabled = false;
+
+        // Catatan: Kontrak tidak mendukung URI unik, jadi kita hanya mencatat metadata
+        console.log('Metadata URL:', metadataUrl);
+      } catch (error) {
+        statusDiv.textContent = `Status: Error uploading to IPFS: ${error.message}`;
+        uploadBtn.disabled = false;
+      }
+    }
+
+    // Fungsi untuk mencetak NFT
+    async function mintNFT() {
+      if (!contract) {
+        statusDiv.textContent = 'Status: Contract not initialized!';
+        return;
+      }
+
+      mintBtn.disabled = true;
+      statusDiv.textContent = 'Status: Minting NFT...';
+
+      try {
+        // Asumsi claim untuk 1 NFT dengan harga 0 (sesuaikan jika ada harga)
+        const tx = await contract.claim(
+          account,
+          1, // quantity
+          '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // native token (ETH/GHO)
+          0, // price per token
+          [], // proofs (kosong untuk open edition)
+          1, // max quantity per transaction
+          { value: 0 }
+        );
+        await tx.wait();
+        statusDiv.textContent = 'Status: NFT minted successfully!';
+      } catch (error) {
+        statusDiv.textContent = `Status: Error minting NFT: ${error.message}`;
+        mintBtn.disabled = false;
+      }
+    }
+
+    // Event listeners
+    connectWalletBtn.addEventListener('click', connectWallet);
+    uploadBtn.addEventListener('click', uploadPhoto);
+    mintBtn.addEventListener('click', mintNFT);
+    contractAddressInput.addEventListener('input', initializeContract);
+  </script>
+</body>
+</html>
