@@ -3,392 +3,390 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Momoka Mint NFT</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>ERC-20 Token Creator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome CDN for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Web3.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.7.4/dist/web3.min.js"></script>
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-image: url('https://fcb2f4e08c25f8c7f8e218352d8f51d0.ipfs.4everland.link/ipfs/bafybeih3hubg7vczq6zl54vzsvjwkz5gdqxgv42ostf7bvzjtk6ttmhvzq');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
     }
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: -1;
+    .gradient-text {
+      background: linear-gradient(to right, #2563eb, #4f46e5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    h1 {
-      font-size: 2.5em;
-      color: #00ff88;
-      text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-      margin-bottom: 20px;
-      animation: glow 2s ease-in-out infinite alternate;
+    .gradient-button {
+      background: linear-gradient(to right, #2563eb, #4f46e5);
     }
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
-      width: 100%;
-      max-width: 500px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+    .gradient-button:hover:not(:disabled) {
+      opacity: 0.9;
     }
-    select, input[type="file"], input[type="text"] {
-      margin: 15px 0;
-      padding: 12px;
-      width: 100%;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      transition: all 0.3s ease;
+    input, select {
+      transition: all 0.2s;
     }
-    select:focus, input[type="file"]:focus, input[type="text"]:focus {
+    input:focus, select:focus {
       outline: none;
-      box-shadow: 0 0 10px #00ff88;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
     }
-    button {
-      margin: 15px 0;
-      padding: 12px;
-      width: 100%;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      background: linear-gradient(45deg, #00ff88, #00ccff);
-      color: #fff;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 255, 136, 0.5);
+    .error, .success {
+      animation: fadeIn 0.3s ease-in;
     }
-    button:disabled {
-      background: #555;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #00ff88;
-      text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
-    }
-    img#preview {
-      max-width: 100%;
-      margin-top: 15px;
-      border-radius: 8px;
-      display: none;
-      border: 2px solid #00ff88;
-    }
-    @keyframes glow {
-      from { text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
-      to { text-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
-  <!-- Skrip Eksternal -->
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
 </head>
 <body>
-  <div class="overlay"></div>
-  <h1>Momoka Mint NFT</h1>
-  <div class="container">
-    <select id="network" onchange="switchNetwork()">
-      <option value="1">Ethereum</option>
-      <option value="8453">Base</option>
-      <option value="59144">Linea</option>
-      <option value="1868">Sonneium</option>
-      <option value="57073">Ink</option>
-      <option value="55244">Superposition</option>
-      <option value="232">Lens Chain Mainnet</option>
-    </select>
-    <input type="text" id="contractAddress" placeholder="Enter Contract Address">
-    <button id="connectWallet">Connect Wallet</button>
-    <input type="file" id="photo" accept="image/*">
-    <img id="preview" alt="Preview">
-    <button id="upload" disabled>Upload Photo</button>
-    <button id="mint" disabled>Mint NFT</button>
-    <div id="status">Status: Waiting for wallet connection...</div>
+  <div class="min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row items-center justify-between mb-8 card p-6">
+        <h1 class="text-3xl font-bold gradient-text">ERC-20 Token Creator</h1>
+        <div class="mt-4 md:mt-0 flex items-center gap-4">
+          <button id="connectWallet" class="px-6 py-2 gradient-button text-white rounded-lg transition-all duration-200 shadow-md">
+            Connect Wallet
+          </button>
+          <div id="accountInfo" class="hidden flex items-center gap-2">
+            <span id="accountDisplay" class="text-sm text-gray-600"></span>
+            <select id="networkSelect" class="bg-white border rounded-lg px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500">
+              <option value="0xaa36a7">Ethereum Sepolia</option>
+              <option value="0x1">Ethereum Mainnet</option>
+              <option value="0xe708">Linea Mainnet</option>
+              <option value="0x2105">Base</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Token Form -->
+      <div class="card p-6 mb-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Token Name</label>
+            <input id="tokenName" type="text" placeholder="e.g., My Token" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Token Symbol</label>
+            <input id="tokenSymbol" type="text" placeholder="e.g., MTK" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Initial Supply</label>
+            <input id="tokenSupply" type="number" placeholder="e.g., 1000000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <button id="deployToken" disabled class="w-full py-3 rounded-lg text-white font-medium bg-gray-400">Deploy Token</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg"></div>
+      <div id="successMessage" class="hidden mt-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg"></div>
+
+      <!-- Token Details -->
+      <div id="tokenDetails" class="hidden card p-6 mt-6">
+        <h2 class="text-2xl font-semibold mb-4">Token Details</h2>
+        <div class="space-y-2">
+          <p><strong>Contract Address:</strong> <span id="contractAddress"></span></p>
+          <p><strong>Network:</strong> <span id="networkName"></span></p>
+          <p><strong>Token Name:</strong> <span id="detailTokenName"></span></p>
+          <p><strong>Token Symbol:</strong> <span id="detailTokenSymbol"></span></p>
+          <p><strong>Initial Supply:</strong> <span id="detailTokenSupply"></span></p>
+        </div>
+      </div>
+
+      <!-- Quick Guide -->
+      <div class="card p-6 mt-6">
+        <h2 class="text-2xl font-semibold mb-4">Quick Guide</h2>
+        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+          <li>Connect your MetaMask wallet</li>
+          <li>Select your target network (e.g., Sepolia)</li>
+          <li>
+            Fill in token details:
+            <ul class="list-disc list-inside ml-6 mt-1">
+              <li>Token Name (e.g., "My Token")</li>
+              <li>Token Symbol (e.g., "MTK")</li>
+              <li>Initial Supply (e.g., 1000000)</li>
+            </ul>
+          </li>
+          <li>Click Deploy and confirm in MetaMask</li>
+          <li>Your token will be automatically added to MetaMask</li>
+        </ol>
+      </div>
+    </div>
   </div>
 
   <script>
-    // Konfigurasi jaringan
-    const networkConfig = {
-      '1': { 
-        name: 'Ethereum', 
-        rpc: 'https://rpc.ankr.com/eth', 
-        chainId: '0x1', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://etherscan.io'
-      },
-      '8453': { 
-        name: 'Base', 
-        rpc: 'https://mainnet.base.org', 
-        chainId: '0x2135', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://basescan.org'
-      },
-      '59144': { 
-        name: 'Linea', 
-        rpc: 'https://rpc.linea.build', 
-        chainId: '0xe708', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://lineascan.build'
-      },
-      '1868': { 
-        name: 'Sonneium', 
-        rpc: 'https://rpc.soneium.org', 
-        chainId: '0x74c', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://explorer.soneium.org'
-      },
-      '57073': { 
-        name: 'Ink', 
-        rpc: 'https://rpc-gel.inkonchain.com', 
-        chainId: '0xded1', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://explorer.inkonchain.com'
-      },
-      '55244': { 
-        name: 'Superposition', 
-        rpc: 'https://rpc.superposition.so', 
-        chainId: '0xd7cc', 
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        blockExplorer: 'https://explorer.superposition.so'
-      },
-      '232': { 
-        name: 'Lens Chain Mainnet', 
-        rpc: 'https://rpc.lens.xyz', 
-        chainId: '0xe8', 
-        nativeCurrency: { name: 'GHO', symbol: 'GHO', decimals: 18 },
-        blockExplorer: 'https://explorer.lens.xyz'
-      }
-    };
+    // State variables
+    let web3, account, chainId, contractAddress;
 
-    // ABI kontrak (hanya fungsi claim untuk minting)
-    const contractABI = [
-      {
-        "inputs": [
-          { "internalType": "address", "name": "_to", "type": "address" },
-          { "internalType": "uint256", "name": "_quantity", "type": "uint256" },
-          { "internalType": "address", "name": "_currency", "type": "address" },
-          { "internalType": "uint256", "name": "_pricePerToken", "type": "uint256" },
-          { "internalType": "bytes32[]", "name": "_proofs", "type": "bytes32[]" },
-          { "internalType": "uint256", "name": "_maxQuantityPerTransaction", "type": "uint256" }
-        ],
-        "name": "claim",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      }
+    // Network configurations
+    const networks = [
+      { chainId: "0xaa36a7", name: "Ethereum Sepolia" },
+      { chainId: "0x1", name: "Ethereum Mainnet" },
+      { chainId: "0xe708", name: "Linea Mainnet" },
+      { chainId: "0x2105", name: "Base" },
     ];
 
-    // Elemen DOM
-    const connectWalletBtn = document.getElementById('connectWallet');
-    const uploadBtn = document.getElementById('upload');
-    const mintBtn = document.getElementById('mint');
-    const photoInput = document.getElementById('photo');
-    const previewImg = document.getElementById('preview');
-    const statusDiv = document.getElementById('status');
-    const networkSelect = document.getElementById('network');
-    const contractAddressInput = document.getElementById('contractAddress');
+    // DOM elements
+    const connectWalletBtn = document.getElementById("connectWallet");
+    const accountInfo = document.getElementById("accountInfo");
+    const accountDisplay = document.getElementById("accountDisplay");
+    const networkSelect = document.getElementById("networkSelect");
+    const deployTokenBtn = document.getElementById("deployToken");
+    const tokenNameInput = document.getElementById("tokenName");
+    const tokenSymbolInput = document.getElementById("tokenSymbol");
+    const tokenSupplyInput = document.getElementById("tokenSupply");
+    const errorMessage = document.getElementById("errorMessage");
+    const successMessage = document.getElementById("successMessage");
+    const tokenDetails = document.getElementById("tokenDetails");
+    const contractAddressSpan = document.getElementById("contractAddress");
+    const networkNameSpan = document.getElementById("networkName");
+    const detailTokenName = document.getElementById("detailTokenName");
+    const detailTokenSymbol = document.getElementById("detailTokenSymbol");
+    const detailTokenSupply = document.getElementById("detailTokenSupply");
 
-    let provider, signer, contract, account;
-
-    // Kredensial Pinata
-    const pinataApiKey = '89e8ab68cb7a866c1039';
-    const pinataSecretApiKey = 'ae997be1c296a7f0d92318366e46a7129badcd53d5cf843d6744186f215a4654';
-
-    // Fungsi untuk mengunggah file ke Pinata
-    async function uploadToPinata(file) {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-        method: 'POST',
-        headers: {
-          pinata_api_key: pinataApiKey,
-          pinata_secret_api_key: pinataSecretApiKey
-        },
-        body: formData
-      });
-      const data = await response.json();
-      if (data.IpfsHash) {
-        return `https://ipfs.io/ipfs/${data.IpfsHash}`;
-      } else {
-        throw new Error('Failed to upload to Pinata');
-      }
-    }
-
-    // Fungsi untuk menghubungkan dompet
-    async function connectWallet() {
+    // Initialize Web3
+    async function initWeb3() {
       if (!window.ethereum) {
-        statusDiv.textContent = 'Status: Please install MetaMask!';
-        return;
+        showError("Please install MetaMask!");
+        return false;
       }
-      provider = new ethers.providers.Web3Provider(window.ethereum);
+
       try {
-        await provider.send('eth_requestAccounts', []);
-        signer = provider.getSigner();
-        account = await signer.getAddress();
-        connectWalletBtn.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
-        connectWalletBtn.disabled = true;
-        uploadBtn.disabled = false;
-        statusDiv.textContent = 'Status: Wallet connected! Select a photo to upload.';
-        await switchNetwork();
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        web3 = new Web3(window.ethereum);
+        account = accounts[0];
+        chainId = await web3.eth.getChainId();
+
+        // Update UI
+        accountDisplay.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+        connectWalletBtn.classList.add("hidden");
+        accountInfo.classList.remove("hidden");
+        deployTokenBtn.classList.remove("bg-gray-400");
+        deployTokenBtn.classList.add("gradient-button");
+        deployTokenBtn.disabled = false;
+        networkSelect.value = web3.utils.numberToHex(chainId);
+
+        // Event listeners for account/network changes
+        window.ethereum.on("accountsChanged", (accounts) => {
+          account = accounts[0] || null;
+          accountDisplay.textContent = account ? `${account.slice(0, 6)}...${account.slice(-4)}` : "";
+          if (!account) {
+            connectWalletBtn.classList.remove("hidden");
+            accountInfo.classList.add("hidden");
+            deployTokenBtn.classList.add("bg-gray-400");
+            deployTokenBtn.classList.remove("gradient-button");
+            deployTokenBtn.disabled = true;
+          }
+        });
+
+        window.ethereum.on("chainChanged", () => window.location.reload());
+
+        return true;
       } catch (error) {
-        statusDiv.textContent = `Status: Error connecting wallet: ${error.message}`;
+        showError("User denied account access");
+        return false;
       }
     }
 
-    // Fungsi untuk beralih jaringan
-    async function switchNetwork() {
-      const chainId = networkSelect.value;
-      const config = networkConfig[chainId];
-      if (!config) return;
+    // Switch network
+    async function switchNetwork(targetChainId) {
+      if (!web3) return;
 
       try {
         await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: config.chainId }]
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: targetChainId }],
         });
-        statusDiv.textContent = `Status: Switched to ${config.name}.`;
-        if (account && contractAddressInput.value) {
-          initializeContract();
-        }
-      } catch (error) {
-        if (error.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: config.chainId,
-                chainName: config.name,
-                rpcUrls: [config.rpc],
-                nativeCurrency: config.nativeCurrency,
-                blockExplorerUrls: [config.blockExplorer]
-              }]
-            });
-            statusDiv.textContent = `Status: Added and switched to ${config.name}.`;
-            if (account && contractAddressInput.value) {
-              initializeContract();
-            }
-          } catch (addError) {
-            statusDiv.textContent = `Status: Error adding network: ${addError.message}`;
-          }
+        showSuccess(`Switched to ${networks.find(n => n.chainId === targetChainId).name}`);
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          showError("This network needs to be added to your MetaMask");
         } else {
-          statusDiv.textContent = `Status: Error switching network: ${error.message}`;
+          showError(switchError.message);
         }
       }
     }
 
-    // Inisialisasi kontrak
-    function initializeContract() {
-      const contractAddress = contractAddressInput.value;
-      if (!ethers.utils.isAddress(contractAddress)) {
-        statusDiv.textContent = 'Status: Invalid contract address!';
-        return;
-      }
-      contract = new ethers.Contract(contractAddress, contractABI, signer);
-      mintBtn.disabled = false;
-      statusDiv.textContent = 'Status: Contract initialized. Ready to mint.';
-    }
+    // Deploy token
+    async function deployToken() {
+      const tokenName = tokenNameInput.value.trim();
+      const tokenSymbol = tokenSymbolInput.value.trim();
+      const tokenSupply = tokenSupplyInput.value.trim();
 
-    // Pratinjau gambar
-    photoInput.addEventListener('change', () => {
-      const file = photoInput.files[0];
-      if (file) {
-        previewImg.src = URL.createObjectURL(file);
-        previewImg.style.display = 'block';
-        uploadBtn.disabled = false;
-      }
-    });
-
-    // Fungsi untuk mengunggah foto ke IPFS via Pinata
-    async function uploadPhoto() {
-      const file = photoInput.files[0];
-      if (!file) {
-        statusDiv.textContent = 'Status: Please select a photo!';
+      if (!web3 || !account) {
+        showError("Please connect your wallet first");
         return;
       }
 
-      uploadBtn.disabled = true;
-      statusDiv.textContent = 'Status: Uploading to Pinata...';
+      if (!tokenName || !tokenSymbol || !tokenSupply) {
+        showError("Please fill all fields");
+        return;
+      }
+
+      deployTokenBtn.disabled = true;
+      deployTokenBtn.textContent = "Deploying Token...";
+      deployTokenBtn.classList.add("bg-gray-400");
+      deployTokenBtn.classList.remove("gradient-button");
+      clearMessages();
 
       try {
-        // Unggah gambar ke Pinata
-        const imageUrl = await uploadToPinata(file);
+        const tokenContract = new web3.eth.Contract([
+          {
+            inputs: [
+              { internalType: "string", name: "name_", type: "string" },
+              { internalType: "string", name: "symbol_", type: "string" },
+              { internalType: "uint256", name: "initialSupply_", type: "uint256" },
+            ],
+            stateMutability: "nonpayable",
+            type: "constructor",
+          },
+          {
+            inputs: [
+              { internalType: "address", name: "spender", type: "address" },
+              { internalType: "uint256", name: "amount", type: "uint256" },
+            ],
+            name: "approve",
+            outputs: [{ internalType: "bool", name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+          {
+            inputs: [{ internalType: "address", name: "account", type: "address" }],
+            name: "balanceOf",
+            outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "decimals",
+            outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "name",
+            outputs: [{ internalType: "string", name: "", type: "string" }],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "symbol",
+            outputs: [{ internalType: "string", name: "", type: "string" }],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "totalSupply",
+            outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [
+              { internalType: "address", name: "to", type: "address" },
+              { internalType: "uint256", name: "amount", type: "uint256" },
+            ],
+            name: "transfer",
+            outputs: [{ internalType: "bool", name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+        ]);
 
-        // Buat metadata JSON
-        const metadata = {
-          name: `Momoka NFT #${Date.now()}`,
-          description: 'A unique NFT created on Momoka Mint.',
-          image: imageUrl
-        };
-        const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
+        const deploy = await tokenContract
+          .deploy({
+            data: "0x60806040523480156200001157600080fd5b5060405162000a3838038062000a388339810160408190526200003491620001db565b8251839083906200004d90600390602085019062000080565b5080516200006390600490602084019062000080565b50506005805460ff191660121790555050600655506200028d915050565b82805462000090906200023a565b90600052602060002090601f016020900481019282620000b45760008555620000ff565b82601f10620000cf57805160ff1916838001178555620000ff565b82800160010185558215620000ff579182015b82811115620000ff578251825591602001919060010190620000e2565b506200010d92915062000111565b5090565b5b808211156200010d576000815560010162000112565b634e487b7160e01b600052604160045260246000fd5b600082601f8301126200015057600080fd5b81516001600160401b03808211156200016d57600080fd5b620002178783880162000138565b945060208601519150808211156200022e57600080fd5b506200023d868287016200013856fea26469706673582212209a3a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1064736f6c63430008110033",
+            arguments: [
+              tokenName,
+              tokenSymbol,
+              web3.utils.toWei(tokenSupply, "ether"),
+            ],
+          })
+          .send({
+            from: account,
+            gas: "4700000",
+          });
 
-        // Unggah metadata ke Pinata
-        const metadataUrl = await uploadToPinata(metadataBlob);
+        contractAddress = deploy.options.address;
+        showSuccess(`Token deployed successfully at ${contractAddress}`);
 
-        statusDiv.textContent = `Status: Photo uploaded to Pinata. Metadata URL: ${metadataUrl}`;
-        mintBtn.disabled = false;
+        // Update token details
+        tokenDetails.classList.remove("hidden");
+        contractAddressSpan.textContent = contractAddress;
+        networkNameSpan.textContent = networks.find(n => n.chainId === web3.utils.numberToHex(chainId)).name;
+        detailTokenName.textContent = tokenName;
+        detailTokenSymbol.textContent = tokenSymbol;
+        detailTokenSupply.textContent = tokenSupply;
 
-        console.log('Metadata URL:', metadataUrl);
+        // Add token to MetaMask
+        try {
+          await window.ethereum.request({
+            method: "wallet_watchAsset",
+            params: {
+              type: "ERC20",
+              options: {
+                address: contractAddress,
+                symbol: tokenSymbol,
+                decimals: 18,
+                name: tokenName,
+              },
+            },
+          });
+        } catch (error) {
+          console.error("Error adding token to MetaMask:", error);
+        }
       } catch (error) {
-        statusDiv.textContent = `Status: Error uploading to Pinata: ${error.message}`;
-        uploadBtn.disabled = false;
+        showError(error.message);
+      } finally {
+        deployTokenBtn.disabled = false;
+        deployTokenBtn.textContent = "Deploy Token";
+        deployTokenBtn.classList.remove("bg-gray-400");
+        deployTokenBtn.classList.add("gradient-button");
       }
     }
 
-    // Fungsi untuk mencetak NFT
-    async function mintNFT() {
-      if (!contract) {
-        statusDiv.textContent = 'Status: Contract not initialized!';
-        return;
-      }
+    // Utility functions
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove("hidden");
+      successMessage.classList.add("hidden");
+    }
 
-      mintBtn.disabled = true;
-      statusDiv.textContent = 'Status: Minting NFT...';
+    function showSuccess(message) {
+      successMessage.textContent = message;
+      successMessage.classList.remove("hidden");
+      errorMessage.classList.add("hidden");
+    }
 
-      try {
-        const tx = await contract.claim(
-          account,
-          1, // quantity
-          '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // native token (ETH/GHO)
-          0, // price per token
-          [], // proofs (kosong untuk open edition)
-          1, // max quantity per transaction
-          { value: 0 }
-        );
-        await tx.wait();
-        statusDiv.textContent = 'Status: NFT minted successfully!';
-      } catch (error) {
-        statusDiv.textContent = `Status: Error minting NFT: ${error.message}`;
-        mintBtn.disabled = false;
-      }
+    function clearMessages() {
+      errorMessage.classList.add("hidden");
+      successMessage.classList.add("hidden");
     }
 
     // Event listeners
-    connectWalletBtn.addEventListener('click', connectWallet);
-    uploadBtn.addEventListener('click', uploadPhoto);
-    mintBtn.addEventListener('click', mintNFT);
-    contractAddressInput.addEventListener('input', initializeContract);
+    connectWalletBtn.addEventListener("click", initWeb3);
+    networkSelect.addEventListener("change", (e) => switchNetwork(e.target.value));
+    deployTokenBtn.addEventListener("click", deployToken);
+
+    // Initialize Web3 on page load
+    initWeb3();
   </script>
 </body>
 </html>
