@@ -8,8 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome CDN for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Web3.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.7.4/dist/web3.min.js"></script>
+  <!-- Web3.js CDN (versi terbaru) -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -236,6 +236,22 @@
         return;
       }
 
+      if (isNaN(tokenSupply) || Number(tokenSupply) <= 0) {
+        showError("Initial Supply must be a positive number");
+        return;
+      }
+
+      if (web3.utils.numberToHex(chainId) !== networkSelect.value) {
+        showError("Selected network does not match MetaMask. Please switch to the correct network.");
+        return;
+      }
+
+      const balance = await web3.eth.getBalance(account);
+      if (web3.utils.fromWei(balance, "ether") < 0.01) {
+        showError("Insufficient test ETH. Please get more from a Sepolia faucet.");
+        return;
+      }
+
       deployTokenBtn.disabled = true;
       deployTokenBtn.textContent = "Deploying Token...";
       deployTokenBtn.classList.add("bg-gray-400");
@@ -310,19 +326,20 @@
           },
         ]);
 
-        const deploy = await tokenContract
-          .deploy({
-            data: "0x60806040523480156200001157600080fd5b5060405162000a3838038062000a388339810160408190526200003491620001db565b8251839083906200004d90600390602085019062000080565b5080516200006390600490602084019062000080565b50506005805460ff191660121790555050600655506200028d915050565b82805462000090906200023a565b90600052602060002090601f016020900481019282620000b45760008555620000ff565b82601f10620000cf57805160ff1916838001178555620000ff565b82800160010185558215620000ff579182015b82811115620000ff578251825591602001919060010190620000e2565b506200010d92915062000111565b5090565b5b808211156200010d576000815560010162000112565b634e487b7160e01b600052604160045260246000fd5b600082601f8301126200015057600080fd5b81516001600160401b03808211156200016d57600080fd5b620002178783880162000138565b945060208601519150808211156200022e57600080fd5b506200023d868287016200013856fea26469706673582212209a3a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1064736f6c63430008110033",
-            arguments: [
-              tokenName,
-              tokenSymbol,
-              web3.utils.toWei(tokenSupply, "ether"),
-            ],
-          })
-          .send({
-            from: account,
-            gas: "4700000",
-          });
+        const deployTx = tokenContract.deploy({
+          data: "0x60806040523480156200001157600080fd5b5060405162000a3838038062000a388339810160408190526200003491620001db565b8251839083906200004d90600390602085019062000080565b5080516200006390600490602084019062000080565b50506005805460ff191660121790555050600655506200028d915050565b82805462000090906200023a565b90600052602060002090601f016020900481019282620000b45760008555620000ff565b82601f10620000cf57805160ff1916838001178555620000ff565b82800160010185558215620000ff579182015b82811115620000ff578251825591602001919060010190620000e2565b506200010d92915062000111565b5090565b5b808211156200010d576000815560010162000112565b634e487b7160e01b600052604160045260246000fd5b600082601f8301126200015057600080fd5b81516001600160401b03808211156200016d57600080fd5b620002178783880162000138565b945060208601519150808211156200022e57600080fd5b506200023d868287016200013856fea26469706673582212209a3a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1064736f6c63430008110033",
+          arguments: [
+            tokenName,
+            tokenSymbol,
+            web3.utils.toWei(tokenSupply, "ether"),
+          ],
+        });
+
+        const gas = await deployTx.estimateGas({ from: account });
+        const deploy = await deployTx.send({
+          from: account,
+          gas: Math.floor(gas * 1.2), // Buffer 20%
+        });
 
         contractAddress = deploy.options.address;
         showSuccess(`Token deployed successfully at ${contractAddress}`);
