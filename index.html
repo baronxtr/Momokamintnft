@@ -213,8 +213,8 @@
     let provider, signer, contract, account;
 
     // Kredensial Pinata
-    const pinataApiKey = '544cc9837968e38eb84c';
-    const pinataSecretApiKey = '830f07586ecca624da656c4afd6271f9a8554f6b0d470e9f099c9d8dd4e3566f';
+    const pinataApiKey = '89e8ab68cb7a866c1039';
+    const pinataSecretApiKey = 'ae997be1c296a7f0d92318366e46a7129badcd53d5cf843d6744186f215a4654';
 
     // Fungsi untuk mengunggah file ke Pinata
     async function uploadToPinata(file) {
@@ -232,7 +232,7 @@
       if (data.IpfsHash) {
         return `https://ipfs.io/ipfs/${data.IpfsHash}`;
       } else {
-        throw new Error('Pinata upload failed: ' + JSON.stringify(data));
+        throw new Error('Failed to upload to Pinata');
       }
     }
 
@@ -320,7 +320,7 @@
       }
     });
 
-    // Fungsi untuk mengunggah foto ke Pinata
+    // Fungsi untuk mengunggah foto ke IPFS via Pinata
     async function uploadPhoto() {
       const file = photoInput.files[0];
       if (!file) {
@@ -349,7 +349,6 @@
         statusDiv.textContent = `Status: Photo uploaded to Pinata. Metadata URL: ${metadataUrl}`;
         mintBtn.disabled = false;
 
-        // Catatan: Kontrak tidak mendukung URI unik, jadi kita hanya mencatat metadata
         console.log('Metadata URL:', metadataUrl);
       } catch (error) {
         statusDiv.textContent = `Status: Error uploading to Pinata: ${error.message}`;
@@ -368,7 +367,6 @@
       statusDiv.textContent = 'Status: Minting NFT...';
 
       try {
-        // Asumsi claim untuk 1 NFT dengan harga 0 (sesuaikan jika ada harga)
         const tx = await contract.claim(
           account,
           1, // quantity
