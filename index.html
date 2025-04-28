@@ -105,7 +105,6 @@
   </style>
   <!-- Skrip Eksternal -->
   <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-  <script src="https://unpkg.com/ipfs-http-client@59.0.0/dist/index.min.js"></script>
 </head>
 <body>
   <div class="overlay"></div>
@@ -211,31 +210,13 @@
     const networkSelect = document.getElementById('network');
     const contractAddressInput = document.getElementById('contractAddress');
 
-    let provider, signer, contract, ipfs, account;
+    let provider, signer, contract, account;
 
-    // Inisialisasi IPFS dengan Infura Project ID dan Secret
-    const infuraProjectId = '0b0dd6c9e78cc0d60ce135cc62189213';
-    const infuraProjectSecret = 'Jn96YCwgJZpObuN1QIiE97Sje3nvnK21vnQWyjjmfGFP0b7DZUnF-CeKagirmxX2KURYxPEBmnBfeTBIaIFQlg';
-    ipfs = window.IpfsHttpClient.create({
-      host: 'ipfs.infura.io',
-      port: 5001,
-      protocol: 'https',
-      headers: {
-        authorization: 'Basic ' + btoa(infuraProjectId + ':' + infuraProjectSecret)
-      }
-    });
+    // Kredensial Pinata
+    const pinataApiKey = '544cc9837968e38eb84c';
+    const pinataSecretApiKey = '830f07586ecca624da656c4afd6271f9a8554f6b0d470e9f099c9d8dd4e3566f';
 
-    // Fallback ke gateway publik jika Infura gagal
-    const fallbackIpfs = window.IpfsHttpClient.create({
-      host: 'ipfs.io',
-      port: 5001,
-      protocol: 'https'
-    });
-
-    /*
-    // Alternatif: Gunakan Pinata (uncomment dan masukkan kredensial)
-    const pinataApiKey = 'YOUR_PINATA_API_KEY';
-    const pinataSecretApiKey = 'YOUR_PINATA_SECRET_API_KEY';
+    // Fungsi untuk mengunggah file ke Pinata
     async function uploadToPinata(file) {
       const formData = new FormData();
       formData.append('file', file);
@@ -248,17 +229,12 @@
         body: formData
       });
       const data = await response.json();
-      return `https://ipfs.io/ipfs/${data.IpfsHash}`;
+      if (data.IpfsHash) {
+        return `https://ipfs.io/ipfs/${data.IpfsHash}`;
+      } else {
+        throw new Error('Pinata upload failed: ' + JSON.stringify(data));
+      }
     }
-
-    // Alternatif: Gunakan NFT.storage (uncomment dan masukkan API key)
-    const nftStorageApiKey = 'YOUR_NFT_STORAGE_API_KEY';
-    async function uploadToNFTStorage(file) {
-      const client = new NFTStorage({ token: nftStorageApiKey });
-      const cid = await client.storeBlob(file);
-      return `https://ipfs.io/ipfs/${cid}`;
-    }
-    */
 
     // Fungsi untuk menghubungkan dompet
     async function connectWallet() {
@@ -344,7 +320,7 @@
       }
     });
 
-    // Fungsi untuk mengunggah foto ke IPFS
+    // Fungsi untuk mengunggah foto ke Pinata
     async function uploadPhoto() {
       const file = photoInput.files[0];
       if (!file) {
@@ -353,23 +329,11 @@
       }
 
       uploadBtn.disabled = true;
-      statusDiv.textContent = 'Status: Uploading to IPFS...';
+      statusDiv.textContent = 'Status: Uploading to Pinata...';
 
       try {
-        // Coba unggah ke Infura
-        let result, imageCid, imageUrl;
-        try {
-          result = await ipfs.add(file);
-          imageCid = result.path;
-          imageUrl = `https://ipfs.io/ipfs/${imageCid}`;
-        } catch (infuraError) {
-          console.warn('Infura upload failed:', infuraError);
-          statusDiv.textContent = 'Status: Infura failed, trying fallback IPFS...';
-          // Fallback ke ipfs.io
-          result = await fallbackIpfs.add(file);
-          imageCid = result.path;
-          imageUrl = `https://ipfs.io/ipfs/${imageCid}`;
-        }
+        // Unggah gambar ke Pinata
+        const imageUrl = await uploadToPinata(file);
 
         // Buat metadata JSON
         const metadata = {
@@ -379,27 +343,16 @@
         };
         const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
 
-        // Coba unggah metadata ke Infura
-        let metadataResult, metadataCid, metadataUrl;
-        try {
-          metadataResult = await ipfs.add(metadataBlob);
-          metadataCid = metadataResult.path;
-          metadataUrl = `https://ipfs.io/ipfs/${metadataCid}`;
-        } catch (infuraError) {
-          console.warn('Infura metadata upload failed:', infuraError);
-          statusDiv.textContent = 'Status: Infura metadata failed, trying fallback IPFS...';
-          metadataResult = await fallbackIpfs.add(metadataBlob);
-          metadataCid = metadataResult.path;
-          metadataUrl = `https://ipfs.io/ipfs/${metadataCid}`;
-        }
+        // Unggah metadata ke Pinata
+        const metadataUrl = await uploadToPinata(metadataBlob);
 
-        statusDiv.textContent = `Status: Photo uploaded to IPFS. Metadata URL: ${metadataUrl}`;
+        statusDiv.textContent = `Status: Photo uploaded to Pinata. Metadata URL: ${metadataUrl}`;
         mintBtn.disabled = false;
 
         // Catatan: Kontrak tidak mendukung URI unik, jadi kita hanya mencatat metadata
         console.log('Metadata URL:', metadataUrl);
       } catch (error) {
-        statusDiv.textContent = `Status: Error uploading to IPFS: ${error.message}`;
+        statusDiv.textContent = `Status: Error uploading to Pinata: ${error.message}`;
         uploadBtn.disabled = false;
       }
     }
